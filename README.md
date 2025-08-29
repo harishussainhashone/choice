@@ -104,16 +104,35 @@ A simple NestJS application with RESTful API endpoints for user management.
 ## Features
 
 - RESTful API endpoints
-- User CRUD operations
+- User CRUD operations with MongoDB
+- Swagger API documentation
+- Input validation with class-validator
 - Health check endpoint
 - API information endpoint
 - Built with TypeScript and NestJS
+
+## Prerequisites
+
+- Node.js (v14 or higher)
+- MongoDB (running on localhost:27017)
 
 ## Installation
 
 ```bash
 npm install
 ```
+
+## MongoDB Setup
+
+Make sure MongoDB is running on your system. You can install MongoDB locally or use MongoDB Atlas.
+
+For local MongoDB:
+```bash
+# Start MongoDB service
+mongod
+```
+
+The application will connect to `mongodb://localhost:27017/nestjs-api`
 
 ## Running the app
 
@@ -135,11 +154,21 @@ npm run start:prod
 http://localhost:3000
 ```
 
+### Swagger Documentation
+```
+http://localhost:3000/api
+```
+
 ### General Endpoints
 
 - `GET /` - Welcome message
 - `GET /health` - Health check
 - `GET /info` - API information
+
+### Authentication Endpoints
+
+- `POST /auth/signup` - Register a new user
+- `POST /auth/login` - Login user
 
 ### User Endpoints
 
@@ -150,6 +179,27 @@ http://localhost:3000
 - `DELETE /users/:id` - Delete user
 
 ### Example Requests
+
+#### Register a new user
+```bash
+curl -X POST http://localhost:3000/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "alice_johnson",
+    "email": "alice@example.com",
+    "password": "password123"
+  }'
+```
+
+#### Login user
+```bash
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "alice@example.com",
+    "password": "password123"
+  }'
+```
 
 #### Create a new user
 ```bash
