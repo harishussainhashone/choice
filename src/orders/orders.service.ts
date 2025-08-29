@@ -3,15 +3,20 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Order, OrderDocument, OrderItem, OrderStatus } from './schemas/order.schema';
 import { CheckoutDto } from './dto/checkout.dto';
+import { GuestCheckoutDto } from './dto/guest-checkout.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { QueryOrdersDto } from './dto/query-orders.dto';
 import { CartService } from '../cart/cart.service';
+import { GuestCartService } from '../cart/guest-cart.service';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class OrdersService {
   constructor(
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
     private cartService: CartService,
+    private guestCartService: GuestCartService,
+    private authService: AuthService,
   ) {}
 
   private generateOrderNumber(): string {
@@ -80,6 +85,88 @@ export class OrdersService {
     await this.cartService.clearCart(userId);
 
     return savedOrder;
+  }
+
+  async guestCheckout(guestId: string, guestCheckoutDto: GuestCheckoutDto): Promise<{ order: Order; user?: any; access_token?: string }> {
+    // Get guest's cart
+    const cart = await this.guestCartService.getGuestCart(guestId);
+    
+    if (!cart.items || cart.items.length === 0) {
+      throw new BadRequestException('Cart is empty. Cannot proceed with checkout.');
+    }
+
+    // Calculate costs
+    const subtotal = cart.totalAmount;
+    const shippingCost = this.calculateShippingCost(subtotal);
+    const tax = this.calculateTax(subtotal);
+    const totalAmount = subtotal + shippingCost + tax;
+
+    // Create order items from cart items
+    const orderItems: OrderItem[] = cart.items.map(item => ({
+      productId: item.productId,
+      productName: item.productName,
+      productPrice: item.productPrice,
+      productThumbnail: item.productThumbnail,
+      quantity: item.quantity,
+      totalPrice: item.totalPrice,
+    }));
+
+    let userId = guestId;
+    let user: any = null;
+    let access_token: string | null = null;
+
+    // Handle account creation if requested
+    if (guestCheckoutDto.createAccount && guestCheckoutDto.password && guestCheckoutDto.username) {
+      try {
+        const signupResult = await this.authService.signup({
+          username: guestCheckoutDto.username,
+          email: guestCheckoutDto.shippingAddress.email,
+          password: guestCheckoutDto.password,
+        });
+        
+        // Convert guest cart to user cart
+        await this.guestCartService.convertGuestCartToUserCart(guestId, signupResult.user._id);
+        userId = signupResult.user._id;
+        user = signupResult.user;
+
+        // Generate login token
+        const loginResult = await this.authService.login({
+          email: guestCheckoutDto.shippingAddress.email,
+          password: guestCheckoutDto.password,
+        });
+        access_token = loginResult.access_token || null;
+      } catch (error) {
+        throw new BadRequestException('Failed to create account: ' + error.message);
+      }
+    }
+
+    // Create new order
+    const order = new this.orderModel({
+      orderNumber: this.generateOrderNumber(),
+      userId,
+      items: orderItems,
+      shippingAddress: guestCheckoutDto.shippingAddress,
+      subtotal,
+      shippingCost,
+      tax,
+      totalAmount,
+      totalItems: cart.totalItems,
+      status: OrderStatus.PENDING,
+      paymentMethod: guestCheckoutDto.paymentMethod || 'pending',
+      paymentStatus: 'pending',
+      notes: guestCheckoutDto.notes,
+    });
+
+    const savedOrder = await order.save();
+
+    // Clear the guest cart after successful checkout
+    await this.guestCartService.clearGuestCart(guestId);
+
+    return {
+      order: savedOrder,
+      user,
+      access_token: access_token || undefined,
+    };
   }
 
   async findAll(queryDto: QueryOrdersDto): Promise<{ orders: Order[]; total: number; page: number; totalPages: number }> {

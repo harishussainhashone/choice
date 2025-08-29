@@ -65,7 +65,7 @@ export class CartService {
     } else {
       // Add new item
       const newItem: CartItem = {
-        productId: (product as ProductDocument)._id.toString(),
+        productId: productId, // Use the productId from the request instead
         productName: product.name,
         productPrice: product.price,
         productThumbnail: product.thumbnail,

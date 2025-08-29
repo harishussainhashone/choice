@@ -12,15 +12,19 @@ import {
   HttpCode,
   HttpStatus,
   ForbiddenException,
+  Res,
+  BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { OrdersService } from './orders.service';
 import { CheckoutDto } from './dto/checkout.dto';
+import { GuestCheckoutDto } from './dto/guest-checkout.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { QueryOrdersDto } from './dto/query-orders.dto';
 import { Order } from './schemas/order.schema';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../auth/guards/admin.guard';
+import type { Response } from 'express';
 
 @ApiTags('orders')
 @Controller('orders')
@@ -40,6 +44,40 @@ export class OrdersController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async checkout(@Request() req, @Body() checkoutDto: CheckoutDto): Promise<Order> {
     return this.ordersService.checkout(req.user.userId, checkoutDto);
+  }
+
+  @Post('guest-checkout')
+  @UseGuards() // No authentication required for guest checkout
+  @ApiOperation({ summary: 'Guest checkout without login' })
+  @ApiResponse({ 
+    status: 201, 
+    description: 'Guest order created successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        order: { $ref: '#/components/schemas/Order' },
+        user: { type: 'object' },
+        access_token: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Bad request - cart is empty or invalid data' })
+  async guestCheckout(
+    @Request() req, 
+    @Body() guestCheckoutDto: GuestCheckoutDto,
+    @Res({ passthrough: true }) res: Response
+  ): Promise<{ order: Order; user?: any; access_token?: string }> {
+    const guestId = req.headers['x-guest-id'] as string;
+    if (!guestId) {
+      throw new BadRequestException('Guest cart not found. Please add items to cart first.');
+    }
+
+    const result = await this.ordersService.guestCheckout(guestId, guestCheckoutDto);
+    
+    // Clear guest header after successful checkout
+    res.removeHeader('X-Guest-ID');
+    
+    return result;
   }
 
   @Get('my-orders')

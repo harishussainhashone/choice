@@ -3,8 +3,11 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+
 
   // Enable validation
   app.useGlobalPipes(new ValidationPipe({
@@ -22,6 +25,7 @@ async function bootstrap() {
     .addTag('categories', 'Category management endpoints (Admin only)')
     .addTag('products', 'Product management endpoints')
     .addTag('cart', 'Shopping cart endpoints (User only)')
+    .addTag('guest-cart', 'Guest cart endpoints (No authentication required)')
     .addTag('orders', 'Order management endpoints')
     .addBearerAuth()
     .build();

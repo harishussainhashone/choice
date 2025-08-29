@@ -214,14 +214,25 @@ http://localhost:3000/api
 - `DELETE /products/:id/images` - Remove image from product
 - `DELETE /products/:id` - Delete product
 
-### Cart Endpoints (User Only)
+### Cart Endpoints
 
+#### User Endpoints (Authentication Required)
 - `GET /cart` - Get user cart
 - `POST /cart/add` - Add product to cart
 - `PATCH /cart/items/:productId` - Update cart item quantity
 - `DELETE /cart/items/:productId` - Remove product from cart
 - `DELETE /cart/clear` - Clear entire cart
 - `GET /cart/count` - Get cart item count
+
+#### Guest Endpoints (No Authentication Required)
+- `GET /guest-cart` - Get guest cart
+- `POST /guest-cart/add` - Add product to guest cart
+- `PATCH /guest-cart/items/:productId` - Update guest cart item quantity
+- `DELETE /guest-cart/items/:productId` - Remove product from guest cart
+- `DELETE /guest-cart/clear` - Clear entire guest cart
+- `GET /guest-cart/count` - Get guest cart item count
+
+**Note:** Guest cart uses `X-Guest-ID` header for session management. The server will generate and return this header in responses.
 
 ### Order Endpoints
 
@@ -231,6 +242,9 @@ http://localhost:3000/api
 - `GET /orders/my-orders/:id` - Get user order by ID
 - `PATCH /orders/my-orders/:id/cancel` - Cancel user order
 - `GET /orders/my-orders/stats` - Get user order statistics
+
+#### Guest Endpoints (No Authentication Required)
+- `POST /orders/guest-checkout` - Guest checkout without login (can optionally create account)
 
 #### Admin Only Endpoints
 - `GET /orders` - Get all orders
@@ -363,6 +377,36 @@ curl -X POST http://localhost:3000/cart/add \
   }'
 ```
 
+#### Guest cart operations (No authentication required)
+```bash
+# Get guest cart
+curl -X GET http://localhost:3000/guest-cart
+
+# Add product to guest cart
+curl -X POST http://localhost:3000/guest-cart/add \
+  -H "Content-Type: application/json" \
+  -d '{
+    "productId": "PRODUCT_ID",
+    "quantity": 2
+  }'
+
+# Update guest cart item quantity
+curl -X PATCH http://localhost:3000/guest-cart/items/PRODUCT_ID \
+  -H "Content-Type: application/json" \
+  -d '{
+    "quantity": 3
+  }'
+
+# Remove product from guest cart
+curl -X DELETE http://localhost:3000/guest-cart/items/PRODUCT_ID
+
+# Clear guest cart
+curl -X DELETE http://localhost:3000/guest-cart/clear
+
+# Get guest cart item count
+curl -X GET http://localhost:3000/guest-cart/count
+```
+
 #### Update cart item quantity
 ```bash
 curl -X PATCH http://localhost:3000/cart/items/PRODUCT_ID \
@@ -410,6 +454,31 @@ curl -X POST http://localhost:3000/orders/checkout \
     },
     "paymentMethod": "credit_card",
     "notes": "Please deliver in the morning"
+  }'
+```
+
+#### Guest checkout (No authentication required)
+```bash
+curl -X POST http://localhost:3000/orders/guest-checkout \
+  -H "Content-Type: application/json" \
+  -H "X-Guest-ID: YOUR_GUEST_ID" \
+  -d '{
+    "shippingAddress": {
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "john.doe@example.com",
+      "phone": "+1234567890",
+      "address": "123 Main St",
+      "city": "New York",
+      "state": "NY",
+      "zipCode": "10001",
+      "country": "USA"
+    },
+    "paymentMethod": "credit_card",
+    "notes": "Please deliver in the morning",
+    "createAccount": true,
+    "username": "john_doe",
+    "password": "password123"
   }'
 ```
 
