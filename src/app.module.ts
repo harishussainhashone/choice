@@ -6,10 +6,7 @@ import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
-    MongooseModule.forRoot('mongodb://localhost:27017/nestjs-api', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    }),
+    MongooseModule.forRoot('mongodb://localhost:27017/nestjs-api'),
     UsersModule,
   ],
   controllers: [AppController],
