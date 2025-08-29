@@ -18,13 +18,38 @@ import { Category } from './schemas/category.schema';
 import { AdminGuard } from '../auth/guards/admin.guard';
 
 @ApiTags('categories')
-@ApiBearerAuth()
-@UseGuards(AdminGuard)
 @Controller('categories')
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
+  @Get()
+  @ApiOperation({ summary: 'Get all categories (Public)' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'List of all categories',
+    type: [Category],
+  })
+  async findAll(): Promise<Category[]> {
+    return this.categoriesService.findAll();
+  }
+
+  @Get('admin')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all categories (Admin only)' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'List of all categories',
+    type: [Category],
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden - admin access required' })
+  async findAllAdmin(): Promise<Category[]> {
+    return this.categoriesService.findAll();
+  }
+
   @Post()
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Create a new category (Admin only)' })
   @ApiResponse({ 
@@ -39,19 +64,9 @@ export class CategoriesController {
     return this.categoriesService.create(createCategoryDto);
   }
 
-  @Get()
-  @ApiOperation({ summary: 'Get all categories (Admin only)' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'List of all categories',
-    type: [Category],
-  })
-  @ApiResponse({ status: 403, description: 'Forbidden - admin access required' })
-  async findAll(): Promise<Category[]> {
-    return this.categoriesService.findAll();
-  }
-
   @Get(':id')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get category by ID (Admin only)' })
   @ApiParam({ name: 'id', description: 'Category ID' })
   @ApiResponse({ 
@@ -66,6 +81,8 @@ export class CategoriesController {
   }
 
   @Patch(':id')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Update category by ID (Admin only)' })
   @ApiParam({ name: 'id', description: 'Category ID' })
   @ApiResponse({ 
@@ -85,6 +102,8 @@ export class CategoriesController {
   }
 
   @Delete(':id')
+  @UseGuards(AdminGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete category by ID (Admin only)' })
   @ApiParam({ name: 'id', description: 'Category ID' })

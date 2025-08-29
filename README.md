@@ -188,9 +188,13 @@ http://localhost:3000/api
 - `POST /auth/login` - Login user
 - `POST /auth/admin/login` - Admin login
 
-### Category Endpoints (Admin Only)
+### Category Endpoints
 
-- `GET /categories` - Get all categories
+#### Public Endpoints
+- `GET /categories` - Get all categories (No authentication required)
+
+#### Admin Only Endpoints
+- `GET /categories/admin` - Get all categories (Admin only)
 - `GET /categories/:id` - Get category by ID
 - `POST /categories` - Create a new category
 - `PATCH /categories/:id` - Update category
@@ -299,9 +303,14 @@ curl -X POST http://localhost:3000/categories \
   }'
 ```
 
+#### Get all categories (Public - No authentication required)
+```bash
+curl -X GET http://localhost:3000/categories
+```
+
 #### Get all categories (Admin only)
 ```bash
-curl -X GET http://localhost:3000/categories \
+curl -X GET http://localhost:3000/categories/admin \
   -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
 ```
 
