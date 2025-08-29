@@ -103,12 +103,12 @@ A simple NestJS application with RESTful API endpoints for user management.
 
 ## Features
 
-- RESTful API endpoints
-- User CRUD operations with MongoDB
+- Authentication API endpoints (signup/login)
+- JWT token-based authentication
+- Password hashing with bcrypt
 - Swagger API documentation
 - Input validation with class-validator
-- Health check endpoint
-- API information endpoint
+- MongoDB integration
 - Built with TypeScript and NestJS
 
 ## Prerequisites
@@ -170,13 +170,7 @@ http://localhost:3000/api
 - `POST /auth/signup` - Register a new user
 - `POST /auth/login` - Login user
 
-### User Endpoints
 
-- `GET /users` - Get all users
-- `GET /users/:id` - Get user by ID
-- `POST /users` - Create a new user
-- `PATCH /users/:id` - Update user
-- `DELETE /users/:id` - Delete user
 
 ### Example Requests
 
@@ -201,40 +195,7 @@ curl -X POST http://localhost:3000/auth/login \
   }'
 ```
 
-#### Create a new user
-```bash
-curl -X POST http://localhost:3000/users \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Alice Johnson",
-    "email": "alice@example.com",
-    "age": 28
-  }'
-```
 
-#### Get all users
-```bash
-curl http://localhost:3000/users
-```
-
-#### Get user by ID
-```bash
-curl http://localhost:3000/users/1
-```
-
-#### Update user
-```bash
-curl -X PATCH http://localhost:3000/users/1 \
-  -H "Content-Type: application/json" \
-  -d '{
-    "age": 31
-  }'
-```
-
-#### Delete user
-```bash
-curl -X DELETE http://localhost:3000/users/1
-```
 
 ## Project Structure
 
@@ -244,10 +205,17 @@ src/
 ├── app.service.ts       # Main application service
 ├── app.module.ts        # Root application module
 ├── main.ts             # Application entry point
-└── users/
-    ├── users.controller.ts  # Users controller
-    ├── users.service.ts     # Users service
-    └── users.module.ts      # Users module
+└── auth/
+    ├── auth.controller.ts  # Authentication controller
+    ├── auth.service.ts     # Authentication service
+    ├── auth.module.ts      # Authentication module
+    ├── schemas/
+    │   └── user.schema.ts  # User MongoDB schema
+    ├── dto/
+    │   ├── signup.dto.ts   # Signup validation
+    │   └── login.dto.ts    # Login validation
+    └── strategies/
+        └── jwt.strategy.ts # JWT authentication strategy
 ```
 
 ## Testing

@@ -18,7 +18,6 @@ async function bootstrap() {
     .setTitle('NestJS API')
     .setDescription('A simple NestJS API with user management and MongoDB')
     .setVersion('1.0')
-    .addTag('users', 'User management endpoints')
     .addTag('auth', 'Authentication endpoints')
     .addBearerAuth()
     .build();
