@@ -19,6 +19,10 @@ async function bootstrap() {
     .setDescription('A simple NestJS API with user management and MongoDB')
     .setVersion('1.0')
     .addTag('auth', 'Authentication endpoints')
+    .addTag('categories', 'Category management endpoints (Admin only)')
+    .addTag('products', 'Product management endpoints')
+    .addTag('cart', 'Shopping cart endpoints (User only)')
+    .addTag('orders', 'Order management endpoints')
     .addBearerAuth()
     .build();
   

@@ -20,6 +20,9 @@ export class User {
   @Prop({ required: true, min: 0 })
   age: number;
 
+  @Prop({ required: true, enum: ['user', 'admin'], default: 'user' })
+  role: string;
+
   @Prop({ default: Date.now })
   createdAt: Date;
 

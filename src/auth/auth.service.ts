@@ -6,6 +6,7 @@ import * as bcrypt from 'bcrypt';
 import { User, UserDocument } from './schemas/user.schema';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
+import { AdminLoginDto } from './dto/admin-login.dto';
 
 @Injectable()
 export class AuthService {
@@ -68,7 +69,7 @@ export class AuthService {
     }
 
     // Generate JWT token
-    const payload = { email: user.email, sub: user._id, username: user.username };
+    const payload = { email: user.email, sub: user._id, userId: user._id, username: user.username, role: user.role };
     const access_token = this.jwtService.sign(payload);
 
     // Remove password from response
@@ -77,6 +78,36 @@ export class AuthService {
     return {
       access_token,
       user: userWithoutPassword,
+    };
+  }
+
+  async adminLogin(adminLoginDto: AdminLoginDto): Promise<{ access_token: string; user: any }> {
+    const { email, password } = adminLoginDto;
+
+    // Find admin by email
+    const admin = await this.userModel.findOne({ email, role: 'admin' });
+
+    if (!admin) {
+      throw new UnauthorizedException('Invalid admin credentials');
+    }
+
+    // Check password
+    const isPasswordValid = await bcrypt.compare(password, admin.password);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid admin credentials');
+    }
+
+    // Generate JWT token with admin role
+    const payload = { email: admin.email, sub: admin._id, userId: admin._id, username: admin.username, role: admin.role };
+    const access_token = this.jwtService.sign(payload);
+
+    // Remove password from response
+    const { password: _, ...adminWithoutPassword } = admin.toObject();
+
+    return {
+      access_token,
+      user: adminWithoutPassword,
     };
   }
 
