@@ -9,7 +9,7 @@ import { OrdersModule } from './orders/orders.module';
 
 @Module({
   imports: [
-    MongooseModule.forRoot('mongodb://localhost:27017/nestjs-api'),
+    MongooseModule.forRoot('mongodb+srv://harishussainhashone_db_user:jRc5krGYic5mblHQ@cluster0.aye5bby.mongodb.net/'),
     AuthModule,
     CategoriesModule,
     ProductsModule,
