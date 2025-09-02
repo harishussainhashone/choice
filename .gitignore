@@ -198,3 +198,4 @@ build/
 # Test outputs
 test-results/
 coverage/
+choice.zip
