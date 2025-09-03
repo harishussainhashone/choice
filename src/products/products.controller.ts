@@ -127,16 +127,34 @@ export class ProductsController {
 
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get product by ID' })
+  @ApiOperation({ summary: 'Get product by ID with optional related products' })
   @ApiParam({ name: 'id', description: 'Product ID' })
+  @ApiQuery({ name: 'includeRelated', required: false, type: Boolean, description: 'Include 4 related products (default: false)' })
   @ApiResponse({ 
     status: 200, 
     description: 'Product found',
-    type: Product,
+    schema: {
+      oneOf: [
+        { $ref: '#/components/schemas/Product' },
+        {
+          type: 'object',
+          properties: {
+            product: { $ref: '#/components/schemas/Product' },
+            relatedProducts: { 
+              type: 'array', 
+              items: { $ref: '#/components/schemas/Product' } 
+            },
+          },
+        }
+      ]
+    }
   })
   @ApiResponse({ status: 404, description: 'Product not found' })
-  async findOne(@Param('id') id: string): Promise<Product> {
-    return this.productsService.findOne(id);
+  async findOne(
+    @Param('id') id: string,
+    @Query('includeRelated') includeRelated: boolean = false
+  ): Promise<Product | { product: Product; relatedProducts: Product[] }> {
+    return this.productsService.findOne(id, includeRelated);
   }
 
   @Patch(':id')
@@ -159,8 +177,6 @@ export class ProductsController {
   ): Promise<Product> {
     return this.productsService.update(id, updateProductDto);
   }
-
-
 
   @Patch(':id/thumbnail')
   @ApiBearerAuth()

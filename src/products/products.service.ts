@@ -96,11 +96,20 @@ export class ProductsService {
     };
   }
 
-  async findOne(id: string): Promise<Product> {
+  async findOne(id: string, includeRelated: boolean = false): Promise<Product | { product: Product; relatedProducts: Product[] }> {
     const product = await this.productModel.findById(id).exec();
     if (!product) {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
+
+    if (includeRelated) {
+      const relatedProducts = await this.getRelatedProducts(id, 4);
+      return {
+        product,
+        relatedProducts
+      };
+    }
+
     return product;
   }
 
@@ -193,5 +202,62 @@ export class ProductsService {
       .sort({ createdAt: -1 })
       .limit(limit)
       .exec();
+  }
+
+  async getRelatedProducts(productId: string, limit: number = 4): Promise<Product[]> {
+    // First get the current product to find its category and price
+    const currentProduct = await this.productModel.findById(productId).exec();
+    if (!currentProduct) {
+      throw new NotFoundException(`Product with ID ${productId} not found`);
+    }
+
+    // Find related products based on:
+    // 1. Same category (highest priority)
+    // 2. Similar price range (±20% of current product price)
+    // 3. Active products only
+    // 4. Exclude the current product
+    const priceRange = currentProduct.price * 0.2; // 20% range
+    const minPrice = currentProduct.price - priceRange;
+    const maxPrice = currentProduct.price + priceRange;
+
+    const relatedProducts = await this.productModel
+      .find({
+        _id: { $ne: productId }, // Exclude current product
+        isActive: true,
+        $or: [
+          // Same category (highest priority)
+          { categoryId: currentProduct.categoryId },
+          // Similar price range
+          {
+            price: { $gte: minPrice, $lte: maxPrice },
+            categoryId: { $ne: currentProduct.categoryId } // Different category but similar price
+          }
+        ]
+      })
+      .sort({
+        // Priority: same category first, then by rating, then by creation date
+        categoryId: currentProduct.categoryId ? 1 : -1,
+        rating: -1,
+        createdAt: -1
+      })
+      .limit(limit)
+      .exec();
+
+    // If we don't have enough related products, fill with other active products
+    if (relatedProducts.length < limit) {
+      const remainingCount = limit - relatedProducts.length;
+      const additionalProducts = await this.productModel
+        .find({
+          _id: { $nin: [...relatedProducts.map(p => p._id), productId] },
+          isActive: true
+        })
+        .sort({ rating: -1, createdAt: -1 })
+        .limit(remainingCount)
+        .exec();
+
+      relatedProducts.push(...additionalProducts);
+    }
+
+    return relatedProducts;
   }
 }

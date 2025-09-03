@@ -59,7 +59,12 @@ async function bootstrap() {
   // Swagger for Products
   const productsConfig = createSwaggerConfig('Products API', 'API documentation for product management');
   const productsDoc = SwaggerModule.createDocument(app, productsConfig, { include: [ProductsModule] });
-  SwaggerModule.setup('api/docs/products', app, productsDoc);
+  SwaggerModule.setup('choice-delivery/api/products', app, productsDoc);
+
+  // Swagger for Reviews
+  const reviewsConfig = createSwaggerConfig('Reviews API', 'API documentation for product reviews and ratings');
+  const reviewsDoc = SwaggerModule.createDocument(app, reviewsConfig, { include: [ProductsModule] });
+  SwaggerModule.setup('choice-delivery/api/reviews', app, reviewsDoc);
 
   // Swagger for Categories
   const categoriesConfig = createSwaggerConfig('Categories API', 'API documentation for category management (Admin only)');

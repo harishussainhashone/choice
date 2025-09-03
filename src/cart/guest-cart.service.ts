@@ -6,6 +6,7 @@ import { AddToCartDto } from './dto/add-to-cart.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 import { ProductsService } from '../products/products.service';
 import { v4 as uuidv4 } from 'uuid';
+import { Product } from '../products/schemas/product.schema';
 
 @Injectable()
 export class GuestCartService {
@@ -39,7 +40,9 @@ export class GuestCartService {
     const { productId, quantity } = addToCartDto;
 
     // Verify product exists
-    const product = await this.productsService.findOne(productId);
+    const productResult = await this.productsService.findOne(productId);
+    const product = 'product' in productResult ? productResult.product : productResult as Product;
+    
     if (!product.isActive) {
       throw new BadRequestException('Product is not available');
     }
