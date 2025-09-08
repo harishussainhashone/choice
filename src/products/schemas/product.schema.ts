@@ -46,3 +46,14 @@ export class Product {
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);
+
+// Add indexes for better performance with large datasets
+ProductSchema.index({ name: 1 });
+ProductSchema.index({ categoryId: 1 });
+ProductSchema.index({ price: 1 });
+ProductSchema.index({ isActive: 1 });
+ProductSchema.index({ createdAt: -1 });
+ProductSchema.index({ rating: -1 });
+ProductSchema.index({ categoryId: 1, isActive: 1 });
+ProductSchema.index({ price: 1, isActive: 1 });
+ProductSchema.index({ createdAt: -1, isActive: 1 });

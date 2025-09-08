@@ -52,7 +52,7 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto): Promise<{ access_token: string; user: any }> {
-    const { email, password } = loginDto;
+    const { email, password, firebaseToken } = loginDto;
 
     // Find user by email
     const user = await this.userModel.findOne({ email });
@@ -66,6 +66,12 @@ export class AuthService {
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Update Firebase token if provided
+    if (firebaseToken) {
+      user.firebaseToken = firebaseToken;
+      await user.save();
     }
 
     // Generate JWT token
@@ -82,7 +88,7 @@ export class AuthService {
   }
 
   async adminLogin(adminLoginDto: AdminLoginDto): Promise<{ access_token: string; user: any }> {
-    const { email, password } = adminLoginDto;
+    const { email, password, firebaseToken } = adminLoginDto;
 
     // Find admin by email
     const admin = await this.userModel.findOne({ email, role: 'admin' });
@@ -96,6 +102,12 @@ export class AuthService {
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid admin credentials');
+    }
+
+    // Update Firebase token if provided
+    if (firebaseToken) {
+      admin.firebaseToken = firebaseToken;
+      await admin.save();
     }
 
     // Generate JWT token with admin role
@@ -118,5 +130,49 @@ export class AuthService {
       return result;
     }
     return null;
+  }
+
+  async logout(userId: string): Promise<{ message: string }> {
+    // In a stateless JWT system, logout is typically handled on the client side
+    // by removing the token from storage. However, we can add server-side logic here
+    // such as logging the logout event, updating last logout time, etc.
+    
+    try {
+      // Update user's last logout time and clear Firebase token
+      await this.userModel.findByIdAndUpdate(userId, {
+        lastLogoutAt: new Date(),
+        firebaseToken: null, // Clear Firebase token on logout
+      });
+
+      return {
+        message: 'Successfully logged out',
+      };
+    } catch (error) {
+      // Even if user update fails, we still return success
+      // because logout is primarily a client-side operation
+      return {
+        message: 'Successfully logged out',
+      };
+    }
+  }
+
+  async updateFirebaseToken(userId: string, firebaseToken: string): Promise<{ message: string }> {
+    try {
+      await this.userModel.findByIdAndUpdate(userId, {
+        firebaseToken: firebaseToken,
+      });
+
+      return {
+        message: 'Firebase token updated successfully',
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Failed to update Firebase token');
+    }
+  }
+
+  async getUsersWithFirebaseTokens(): Promise<any[]> {
+    return this.userModel.find({ 
+      firebaseToken: { $ne: null, $exists: true } 
+    }).select('_id email username firebaseToken').exec();
   }
 }

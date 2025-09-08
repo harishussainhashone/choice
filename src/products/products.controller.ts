@@ -127,12 +127,13 @@ export class ProductsController {
 
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get product by ID with optional related products' })
+  @ApiOperation({ summary: 'Get product by ID with optional related products and reviews' })
   @ApiParam({ name: 'id', description: 'Product ID' })
   @ApiQuery({ name: 'includeRelated', required: false, type: Boolean, description: 'Include 4 related products (default: false)' })
+  @ApiQuery({ name: 'includeReviews', required: false, type: Boolean, description: 'Include product reviews and stats (default: false)' })
   @ApiResponse({ 
     status: 200, 
-    description: 'Product found',
+    description: 'Product found with optional related products and reviews',
     schema: {
       oneOf: [
         { $ref: '#/components/schemas/Product' },
@@ -144,6 +145,43 @@ export class ProductsController {
               type: 'array', 
               items: { $ref: '#/components/schemas/Product' } 
             },
+            reviews: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  _id: { type: 'string' },
+                  user: {
+                    type: 'object',
+                    properties: {
+                      _id: { type: 'string' },
+                      name: { type: 'string' },
+                      username: { type: 'string' }
+                    }
+                  },
+                  rating: { type: 'number' },
+                  comment: { type: 'string' },
+                  createdAt: { type: 'string' }
+                }
+              }
+            },
+            reviewStats: {
+              type: 'object',
+              properties: {
+                totalReviews: { type: 'number' },
+                averageRating: { type: 'number' },
+                ratingDistribution: {
+                  type: 'object',
+                  properties: {
+                    '5': { type: 'number' },
+                    '4': { type: 'number' },
+                    '3': { type: 'number' },
+                    '2': { type: 'number' },
+                    '1': { type: 'number' }
+                  }
+                }
+              }
+            }
           },
         }
       ]
@@ -152,9 +190,10 @@ export class ProductsController {
   @ApiResponse({ status: 404, description: 'Product not found' })
   async findOne(
     @Param('id') id: string,
-    @Query('includeRelated') includeRelated: boolean = false
-  ): Promise<Product | { product: Product; relatedProducts: Product[] }> {
-    return this.productsService.findOne(id, includeRelated);
+    @Query('includeRelated') includeRelated: boolean = false,
+    @Query('includeReviews') includeReviews: boolean = false
+  ): Promise<Product | { product: Product; relatedProducts: Product[] } | { product: Product; reviews: any[]; reviewStats: any } | { product: Product; relatedProducts: Product[]; reviews: any[]; reviewStats: any }> {
+    return this.productsService.findOne(id, includeRelated, includeReviews);
   }
 
   @Patch(':id')
@@ -246,5 +285,30 @@ export class ProductsController {
   @ApiResponse({ status: 404, description: 'Product not found' })
   async remove(@Param('id') id: string): Promise<void> {
     return this.productsService.remove(id);
+  }
+
+  @Post('clone-all')
+  @ApiBearerAuth()
+  @UseGuards(AdminGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Clone all existing products multiple times (Admin only)' })
+  @ApiQuery({ name: 'cloneCount', required: false, type: Number, description: 'Number of times to clone each product (default: 20000)' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Products cloned successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string' },
+        totalCloned: { type: 'number' },
+        originalCount: { type: 'number' }
+      }
+    }
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden - admin access required' })
+  @ApiResponse({ status: 404, description: 'No products found to clone' })
+  @ApiResponse({ status: 500, description: 'Internal server error during cloning' })
+  async cloneAllProducts(@Query('cloneCount') cloneCount: number = 20000): Promise<{ message: string; totalCloned: number; originalCount: number }> {
+    return this.productsService.cloneAllProducts(cloneCount);
   }
 }

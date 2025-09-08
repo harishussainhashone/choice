@@ -28,6 +28,12 @@ export class User {
 
   @Prop({ default: Date.now })
   updatedAt: Date;
+
+  @Prop({ type: Date, default: null })
+  lastLogoutAt?: Date;
+
+  @Prop({ type: String, default: null })
+  firebaseToken?: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

@@ -151,8 +151,4 @@ export class CartService {
     return cart.save();
   }
 
-  async getCartItemCount(userId: string): Promise<number> {
-    const cart = await this.cartModel.findOne({ userId }).exec();
-    return cart ? cart.totalItems : 0;
-  }
 }

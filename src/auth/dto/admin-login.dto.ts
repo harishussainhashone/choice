@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsEmail, IsNotEmpty } from 'class-validator';
+import { IsString, IsEmail, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class AdminLoginDto {
   @ApiProperty({
@@ -16,4 +16,13 @@ export class AdminLoginDto {
   @IsString()
   @IsNotEmpty()
   password: string;
+
+  @ApiProperty({
+    description: 'Firebase FCM token for push notifications',
+    example: 'fcm_token_here_123456789',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  firebaseToken?: string;
 }

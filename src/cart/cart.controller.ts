@@ -26,10 +26,10 @@ export class CartController {
   constructor(private readonly cartService: CartService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Get user cart' })
+  @ApiOperation({ summary: 'Get user cart (includes item count)' })
   @ApiResponse({ 
     status: 200, 
-    description: 'User cart retrieved successfully',
+    description: 'User cart retrieved successfully with item count',
     type: Cart,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -38,10 +38,10 @@ export class CartController {
   }
 
   @Post('add')
-  @ApiOperation({ summary: 'Add product to cart' })
+  @ApiOperation({ summary: 'Add product to cart (includes updated item count)' })
   @ApiResponse({ 
     status: 201, 
-    description: 'Product added to cart successfully',
+    description: 'Product added to cart successfully with updated item count',
     type: Cart,
   })
   @ApiResponse({ status: 400, description: 'Bad request - invalid product or quantity' })
@@ -52,11 +52,11 @@ export class CartController {
   }
 
   @Patch('items/:productId')
-  @ApiOperation({ summary: 'Update cart item quantity' })
+  @ApiOperation({ summary: 'Update cart item quantity (includes updated item count)' })
   @ApiParam({ name: 'productId', description: 'Product ID' })
   @ApiResponse({ 
     status: 200, 
-    description: 'Cart item updated successfully',
+    description: 'Cart item updated successfully with updated item count',
     type: Cart,
   })
   @ApiResponse({ status: 400, description: 'Bad request - invalid quantity' })
@@ -71,11 +71,11 @@ export class CartController {
   }
 
   @Delete('items/:productId')
-  @ApiOperation({ summary: 'Remove product from cart' })
+  @ApiOperation({ summary: 'Remove product from cart (includes updated item count)' })
   @ApiParam({ name: 'productId', description: 'Product ID' })
   @ApiResponse({ 
     status: 200, 
-    description: 'Product removed from cart successfully',
+    description: 'Product removed from cart successfully with updated item count',
     type: Cart,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -88,30 +88,16 @@ export class CartController {
   }
 
   @Delete('clear')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Clear entire cart' })
-  @ApiResponse({ status: 204, description: 'Cart cleared successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiResponse({ status: 404, description: 'Cart not found' })
-  async clearCart(@Request() req): Promise<void> {
-    await this.cartService.clearCart(req.user.userId);
-  }
-
-  @Get('count')
-  @ApiOperation({ summary: 'Get cart item count' })
+  @ApiOperation({ summary: 'Clear entire cart (includes updated item count)' })
   @ApiResponse({ 
     status: 200, 
-    description: 'Cart item count retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        count: { type: 'number' },
-      },
-    },
+    description: 'Cart cleared successfully with updated item count (count will be 0)',
+    type: Cart,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getCartItemCount(@Request() req): Promise<{ count: number }> {
-    const count = await this.cartService.getCartItemCount(req.user.userId);
-    return { count };
+  @ApiResponse({ status: 404, description: 'Cart not found' })
+  async clearCart(@Request() req): Promise<Cart> {
+    return this.cartService.clearCart(req.user.userId);
   }
+
 }

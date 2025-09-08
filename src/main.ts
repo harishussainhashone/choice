@@ -7,6 +7,9 @@ import { ProductsModule } from './products/products.module';
 import { CategoriesModule } from './categories/categories.module';
 import { CartModule } from './cart/cart.module';
 import { OrdersModule } from './orders/orders.module';
+import { PaymentsModule } from './payments/payments.module';
+import { FaqsModule } from './faqs/faqs.module';
+import { NewsletterModule } from './newsletter/newsletter.module';
 
 // Helper function to get server URLs from environment variables
 function getServerUrls(): string[] {
@@ -81,6 +84,21 @@ async function bootstrap() {
   const ordersDoc = SwaggerModule.createDocument(app, ordersConfig, { include: [OrdersModule] });
   SwaggerModule.setup('api/docs/orders', app, ordersDoc);
 
+  // Swagger for Payments
+  const paymentsConfig = createSwaggerConfig('Payments API', 'API documentation for payment processing (Stripe & PayPal)');
+  const paymentsDoc = SwaggerModule.createDocument(app, paymentsConfig, { include: [PaymentsModule] });
+  SwaggerModule.setup('api/docs/payments', app, paymentsDoc);
+
+  // Swagger for FAQs
+  const faqsConfig = createSwaggerConfig('FAQs API', 'API documentation for frequently asked questions');
+  const faqsDoc = SwaggerModule.createDocument(app, faqsConfig, { include: [FaqsModule] });
+  SwaggerModule.setup('api/docs/faqs', app, faqsDoc);
+
+  // Swagger for Newsletter
+  const newsletterConfig = createSwaggerConfig('Newsletter API', 'API documentation for newsletter subscription management');
+  const newsletterDoc = SwaggerModule.createDocument(app, newsletterConfig, { include: [NewsletterModule] });
+  SwaggerModule.setup('api/docs/newsletter', app, newsletterDoc);
+
   // Main API docs for all modules
   const mainConfig = createSwaggerConfig('Choice Delivery API', 'Complete API documentation for Choice Delivery application');
   const mainDoc = SwaggerModule.createDocument(app, mainConfig);
@@ -97,6 +115,9 @@ async function bootstrap() {
   console.log(`Categories API docs: http://localhost:${port}/choice-delivery/api/categories`);
   console.log(`Cart API docs: http://localhost:${port}/choice-delivery/api/cart`);
   console.log(`Orders API docs: http://localhost:${port}/choice-delivery/api/orders`);
+  console.log(`Payments API docs: http://localhost:${port}/api/docs/payments`);
+  console.log(`FAQs API docs: http://localhost:${port}/api/docs/faqs`);
+  console.log(`Newsletter API docs: http://localhost:${port}/api/docs/newsletter`);
 }
 
 bootstrap();

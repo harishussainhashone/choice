@@ -36,10 +36,10 @@ export class GuestCartController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get guest cart' })
+  @ApiOperation({ summary: 'Get guest cart (includes item count)' })
   @ApiResponse({ 
     status: 200, 
-    description: 'Guest cart retrieved successfully',
+    description: 'Guest cart retrieved successfully with item count',
     type: Cart,
   })
   async getGuestCart(@Request() req, @Res({ passthrough: true }) res: Response): Promise<Cart> {
@@ -49,10 +49,10 @@ export class GuestCartController {
   }
 
   @Post('add')
-  @ApiOperation({ summary: 'Add product to guest cart' })
+  @ApiOperation({ summary: 'Add product to guest cart (includes updated item count)' })
   @ApiResponse({ 
     status: 201, 
-    description: 'Product added to guest cart successfully',
+    description: 'Product added to guest cart successfully with updated item count',
     type: Cart,
   })
   @ApiResponse({ status: 400, description: 'Bad request - invalid product or quantity' })
@@ -68,11 +68,11 @@ export class GuestCartController {
   }
 
   @Patch('items/:productId')
-  @ApiOperation({ summary: 'Update guest cart item quantity' })
+  @ApiOperation({ summary: 'Update guest cart item quantity (includes updated item count)' })
   @ApiParam({ name: 'productId', description: 'Product ID' })
   @ApiResponse({ 
     status: 200, 
-    description: 'Guest cart item updated successfully',
+    description: 'Guest cart item updated successfully with updated item count',
     type: Cart,
   })
   @ApiResponse({ status: 400, description: 'Bad request - invalid quantity' })
@@ -89,11 +89,11 @@ export class GuestCartController {
   }
 
   @Delete('items/:productId')
-  @ApiOperation({ summary: 'Remove product from guest cart' })
+  @ApiOperation({ summary: 'Remove product from guest cart (includes updated item count)' })
   @ApiParam({ name: 'productId', description: 'Product ID' })
   @ApiResponse({ 
     status: 200, 
-    description: 'Product removed from guest cart successfully',
+    description: 'Product removed from guest cart successfully with updated item count',
     type: Cart,
   })
   @ApiResponse({ status: 404, description: 'Guest cart or product not found' })
@@ -108,38 +108,20 @@ export class GuestCartController {
   }
 
   @Delete('clear')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Clear entire guest cart' })
-  @ApiResponse({ status: 204, description: 'Guest cart cleared successfully' })
+  @ApiOperation({ summary: 'Clear entire guest cart (includes updated item count)' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Guest cart cleared successfully with updated item count (count will be 0)',
+    type: Cart,
+  })
   @ApiResponse({ status: 404, description: 'Guest cart not found' })
   async clearGuestCart(
     @Request() req,
     @Res({ passthrough: true }) res: Response
-  ): Promise<void> {
+  ): Promise<Cart> {
     const guestId = this.getGuestIdFromHeader(req);
     this.setGuestIdHeader(res, guestId);
-    await this.guestCartService.clearGuestCart(guestId);
+    return this.guestCartService.clearGuestCart(guestId);
   }
 
-  @Get('count')
-  @ApiOperation({ summary: 'Get guest cart item count' })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Guest cart item count retrieved successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        count: { type: 'number' },
-      },
-    },
-  })
-  async getGuestCartItemCount(
-    @Request() req,
-    @Res({ passthrough: true }) res: Response
-  ): Promise<{ count: number }> {
-    const guestId = this.getGuestIdFromHeader(req);
-    this.setGuestIdHeader(res, guestId);
-    const count = await this.guestCartService.getGuestCartItemCount(guestId);
-    return { count };
-  }
 }

@@ -155,10 +155,6 @@ export class GuestCartService {
     return cart.save();
   }
 
-  async getGuestCartItemCount(guestId: string): Promise<number> {
-    const cart = await this.cartModel.findOne({ userId: guestId }).exec();
-    return cart ? cart.totalItems : 0;
-  }
 
   async convertGuestCartToUserCart(guestId: string, userId: string): Promise<Cart> {
     // Find guest cart

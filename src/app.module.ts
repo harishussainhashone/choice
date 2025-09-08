@@ -6,6 +6,9 @@ import { CategoriesModule } from './categories/categories.module';
 import { ProductsModule } from './products/products.module';
 import { CartModule } from './cart/cart.module';
 import { OrdersModule } from './orders/orders.module';
+import { PaymentsModule } from './payments/payments.module';
+import { FaqsModule } from './faqs/faqs.module';
+import { NewsletterModule } from './newsletter/newsletter.module';
 
 @Module({
   imports: [
@@ -15,6 +18,9 @@ import { OrdersModule } from './orders/orders.module';
     ProductsModule,
     CartModule,
     OrdersModule,
+    PaymentsModule,
+    FaqsModule,
+    NewsletterModule,
   ],
   providers: [AppService],
 })
