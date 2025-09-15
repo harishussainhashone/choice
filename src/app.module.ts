@@ -9,6 +9,7 @@ import { OrdersModule } from './orders/orders.module';
 import { PaymentsModule } from './payments/payments.module';
 import { FaqsModule } from './faqs/faqs.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
+import { CustomersModule } from './customers/customers.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { NewsletterModule } from './newsletter/newsletter.module';
     PaymentsModule,
     FaqsModule,
     NewsletterModule,
+    CustomersModule,
   ],
   providers: [AppService],
 })
