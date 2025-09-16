@@ -140,6 +140,79 @@ export class ProductsService {
     return result;
   }
 
+  async getProductForAdmin(id: string): Promise<{
+    product: Product;
+    analytics: {
+      totalViews: number;
+      totalSales: number;
+      totalRevenue: number;
+      averageRating: number;
+      totalReviews: number;
+      stockStatus: string;
+    };
+    recentReviews: any[];
+  }> {
+    const product = await this.productModel.findById(id).exec();
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${id} not found`);
+    }
+
+    const analytics = await this.getProductAnalytics(id);
+
+    const recentReviews = await this.reviewModel
+      .find({ productId: id })
+      .populate('userId', 'name username email')
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean()
+      .exec();
+
+    // Format reviews for admin view
+    const formattedReviews = recentReviews.map((review: any) => ({
+      _id: review._id,
+      user: {
+        _id: review.userId._id,
+        name: review.userId.name,
+        username: review.userId.username,
+        email: review.userId.email,
+      },
+      rating: review.rating,
+      comment: review.comment,
+      isApproved: review.isApproved,
+      createdAt: review.createdAt,
+    }));
+
+    return {
+      product,
+      analytics,
+      recentReviews: formattedReviews,
+    };
+  }
+
+  private async getProductAnalytics(productId: string): Promise<{
+    totalViews: number;
+    totalSales: number;
+    totalRevenue: number;
+    averageRating: number;
+    totalReviews: number;
+    stockStatus: string;
+  }> {
+    const reviewStats = await this.getProductReviewStats(productId);
+    
+    const product = await this.productModel.findById(productId).lean().exec();
+    
+    const stockStatus = product?.isActive ? 'In Stock' : 'Out of Stock';
+
+    return {
+      totalViews: 0,
+      totalSales: 0,
+      totalRevenue: 0, 
+      averageRating: reviewStats.averageRating || 0,
+      totalReviews: reviewStats.totalReviews || 0,
+      stockStatus,
+    };
+  }
+
   async findByCategory(categoryId: string, queryDto: QueryProductDto): Promise<{ products: Product[]; total: number; page: number; totalPages: number }> {
     const queryDtoWithCategory = { ...queryDto, categoryId };
     return this.findAll(queryDtoWithCategory);

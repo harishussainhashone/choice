@@ -196,6 +196,60 @@ export class ProductsController {
     return this.productsService.findOne(id, includeRelated, includeReviews);
   }
 
+  @Get('admin/:id')
+  @ApiBearerAuth()
+  @UseGuards(AdminGuard)
+  @ApiOperation({ summary: 'Get product by ID with full details (Admin only)' })
+  @ApiParam({ name: 'id', description: 'Product ID' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Product found with complete details including admin-specific information',
+    schema: {
+      type: 'object',
+      properties: {
+        product: { $ref: '#/components/schemas/Product' },
+        analytics: {
+          type: 'object',
+          properties: {
+            totalViews: { type: 'number' },
+            totalSales: { type: 'number' },
+            totalRevenue: { type: 'number' },
+            averageRating: { type: 'number' },
+            totalReviews: { type: 'number' },
+            stockStatus: { type: 'string' }
+          }
+        },
+        recentReviews: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              _id: { type: 'string' },
+              user: {
+                type: 'object',
+                properties: {
+                  _id: { type: 'string' },
+                  name: { type: 'string' },
+                  username: { type: 'string' },
+                  email: { type: 'string' }
+                }
+              },
+              rating: { type: 'number' },
+              comment: { type: 'string' },
+              isApproved: { type: 'boolean' },
+              createdAt: { type: 'string' }
+            }
+          }
+        }
+      }
+    }
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden - admin access required' })
+  @ApiResponse({ status: 404, description: 'Product not found' })
+  async getProductForAdmin(@Param('id') id: string) {
+    return this.productsService.getProductForAdmin(id);
+  }
+
   @Patch(':id')
   @ApiBearerAuth()
   @UseGuards(AdminGuard)
