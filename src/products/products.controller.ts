@@ -16,6 +16,7 @@ import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { QueryProductDto } from './dto/query-product.dto';
+import { UpdateSelectedProductsPriceDto } from './dto/update-selected-products-price.dto';
 import { Product } from './schemas/product.schema';
 import { AdminGuard } from '../auth/guards/admin.guard';
 
@@ -23,6 +24,7 @@ import { AdminGuard } from '../auth/guards/admin.guard';
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
+
 
   @Post()
   @ApiBearerAuth()
@@ -364,5 +366,49 @@ export class ProductsController {
   @ApiResponse({ status: 500, description: 'Internal server error during cloning' })
   async cloneAllProducts(@Query('cloneCount') cloneCount: number = 20000): Promise<{ message: string; totalCloned: number; originalCount: number }> {
     return this.productsService.cloneAllProducts(cloneCount);
+  }
+
+  @Patch('update-selected-prices')
+  @ApiBearerAuth()
+  @UseGuards(AdminGuard)
+  @ApiOperation({ summary: 'Update prices of selected products to a fixed amount (Admin only)' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Selected product prices updated successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string' },
+        totalUpdated: { type: 'number' },
+        updatedProducts: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              _id: { type: 'string' },
+              name: { type: 'string' },
+              oldPrice: { type: 'number' },
+              newPrice: { type: 'number' },
+              priceChange: { type: 'number' },
+            }
+          }
+        },
+        summary: {
+          type: 'object',
+          properties: {
+            totalProducts: { type: 'number' },
+            newPrice: { type: 'number' },
+            totalPriceChange: { type: 'number' },
+            averageOldPrice: { type: 'number' },
+          }
+        }
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Bad request - invalid product IDs or price' })
+  @ApiResponse({ status: 403, description: 'Forbidden - admin access required' })
+  @ApiResponse({ status: 404, description: 'One or more products not found' })
+  async updateSelectedProductsPrice(@Body() updateSelectedProductsPriceDto: UpdateSelectedProductsPriceDto) {
+    return this.productsService.updateSelectedProductsPrice(updateSelectedProductsPriceDto);
   }
 }
