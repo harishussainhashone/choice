@@ -10,6 +10,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { FaqsModule } from './faqs/faqs.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
 import { CustomersModule } from './customers/customers.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { CustomersModule } from './customers/customers.module';
     FaqsModule,
     NewsletterModule,
     CustomersModule,
+    AdminModule,
   ],
   providers: [AppService],
 })
