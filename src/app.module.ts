@@ -11,9 +11,14 @@ import { FaqsModule } from './faqs/faqs.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
 import { CustomersModule } from './customers/customers.module';
 import { AdminModule } from './admin/admin.module';
+import { EmailModule } from './email/email.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,  
+    }),
     MongooseModule.forRoot('mongodb+srv://harishussainhashone_db_user:jRc5krGYic5mblHQ@cluster0.aye5bby.mongodb.net/'),
     AuthModule,
     CategoriesModule,
@@ -25,6 +30,7 @@ import { AdminModule } from './admin/admin.module';
     NewsletterModule,
     CustomersModule,
     AdminModule,
+    EmailModule,
   ],
   providers: [AppService],
 })
