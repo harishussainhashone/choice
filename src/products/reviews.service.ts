@@ -73,28 +73,30 @@ export class ReviewsService {
         isRejected: false,
       })
       .populate('userId', 'name username email')
-      .populate('productId', 'name image price')
+      .populate('productId', 'name thumbnail price') 
       .sort({ createdAt: -1 })
       .exec();
-
-    return reviews.map((review: any) => ({
-      _id: review._id,
-      user: {
-        _id: review.userId._id,
-        name: review.userId.name,
-        username: review.userId.username,
-        email: review.userId.email,
-      },
-      product: {
-        _id: review.productId._id,
-        name: review.productId.name,
-        image: review.productId.image,
-        price: review.productId.price,
-      },
-      rating: review.rating,
-      comment: review.comment,
-      createdAt: review.createdAt,
-    }));
+  
+    return reviews
+      .filter(review => review.userId && review.productId) 
+      .map((review: any) => ({
+        _id: review._id,
+        user: review.userId ? {
+          _id: review.userId._id,
+          name: review.userId.name,
+          username: review.userId.username,
+          email: review.userId.email,
+        } : null,
+        product: review.productId ? {
+          _id: review.productId._id,
+          name: review.productId.name,
+          thumbnail: review.productId.thumbnail, 
+          price: review.productId.price,
+        } : null,
+        rating: review.rating,
+        comment: review.comment,
+        createdAt: review.createdAt,
+      }));
   }
 
   // Admin: Get all reviews (approved, rejected, pending)
@@ -102,33 +104,35 @@ export class ReviewsService {
     const reviews = await this.reviewModel
       .find()
       .populate('userId', 'name username email')
-      .populate('productId', 'name image price')
+      .populate('productId', 'name thumbnail price') 
       .sort({ createdAt: -1 })
       .exec();
-
-    return reviews.map((review: any) => ({
-      _id: review._id,
-      user: {
-        _id: review.userId._id,
-        name: review.userId.name,
-        username: review.userId.username,
-        email: review.userId.email,
-      },
-      product: {
-        _id: review.productId._id,
-        name: review.productId.name,
-        image: review.productId.image,
-        price: review.productId.price,
-      },
-      rating: review.rating,
-      comment: review.comment,
-      isApproved: review.isApproved,
-      isRejected: review.isRejected,
-      rejectionReason: review.rejectionReason,
-      approvedBy: review.approvedBy,
-      approvedAt: review.approvedAt,
-      createdAt: review.createdAt,
-    }));
+  
+    return reviews
+      .filter(review => review.userId && review.productId) 
+      .map((review: any) => ({
+        _id: review._id,
+        user: review.userId ? {
+          _id: review.userId._id,
+          name: review.userId.name,
+          username: review.userId.username,
+          email: review.userId.email,
+        } : null,
+        product: review.productId ? {
+          _id: review.productId._id,
+          name: review.productId.name,
+          thumbnail: review.productId.thumbnail,
+          price: review.productId.price,
+        } : null,
+        rating: review.rating,
+        comment: review.comment,
+        isApproved: review.isApproved,
+        isRejected: review.isRejected,
+        rejectionReason: review.rejectionReason,
+        approvedBy: review.approvedBy,
+        approvedAt: review.approvedAt,
+        createdAt: review.createdAt,
+      }));
   }
 
   // Admin: Approve a review
