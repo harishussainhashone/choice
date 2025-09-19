@@ -111,6 +111,53 @@ export class ReviewsController {
     return reviews;
   }
 
+  @Get('admin/:reviewId')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get single review by ID (Admin only)' })
+  @ApiParam({ name: 'reviewId', description: 'Review ID' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Review retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        _id: { type: 'string' },
+        user: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string' },
+            name: { type: 'string' },
+            username: { type: 'string' },
+            email: { type: 'string' }
+          }
+        },
+        product: {
+          type: 'object',
+          properties: {
+            _id: { type: 'string' },
+            name: { type: 'string' },
+            thumbnail: { type: 'string' },
+            price: { type: 'number' }
+          }
+        },
+        rating: { type: 'number' },
+        comment: { type: 'string' },
+        isApproved: { type: 'boolean' },
+        isRejected: { type: 'boolean' },
+        rejectionReason: { type: 'string' },
+        approvedBy: { type: 'string' },
+        approvedAt: { type: 'string' },
+        createdAt: { type: 'string' }
+      }
+    }
+  })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin access required' })
+  @ApiResponse({ status: 404, description: 'Review not found' })
+  async getReviewById(@Param('reviewId') reviewId: string) {
+    return await this.reviewsService.getReviewById(reviewId);
+  }
+
   @Put('admin/:reviewId/approve')
   @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth()

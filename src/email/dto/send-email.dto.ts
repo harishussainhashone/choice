@@ -26,3 +26,21 @@ export class SendEmailDto {
   @IsNotEmpty()
   message: string;
 }
+
+export class SendBulkEmailDto {
+  @ApiProperty({
+    description: 'Email subject line',
+    example: 'Special Offer - 50% Off All Products!',
+  })
+  @IsString()
+  @IsNotEmpty()
+  subject: string;
+
+  @ApiProperty({
+    description: 'Email message content',
+    example: 'Dear Customer,\n\nWe are excited to offer you a special discount...',
+  })
+  @IsString()
+  @IsNotEmpty()
+  message: string;
+}

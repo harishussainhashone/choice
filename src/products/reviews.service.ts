@@ -135,6 +135,56 @@ export class ReviewsService {
       }));
   }
 
+// Admin: Get single review by ID with full details
+async getReviewById(reviewId: string): Promise<any> {
+  const review = await this.reviewModel
+    .findById(reviewId)
+    .populate('userId', 'name username email')
+    .populate('productId', 'name thumbnail price')
+    .populate('approvedBy', 'name username')
+    .lean() 
+    .exec();
+
+  if (!review) {
+    throw new NotFoundException('Review not found');
+  }
+
+  const reviewData = review as any;
+
+  if (!reviewData.userId || !reviewData.productId) {
+    throw new NotFoundException('Review references invalid user or product');
+  }
+
+  return {
+    _id: reviewData._id,
+    user: reviewData.userId ? {
+      _id: reviewData.userId._id,
+      name: reviewData.userId.name || 'Unknown User',
+      username: reviewData.userId.username || 'unknown',
+      email: reviewData.userId.email,
+    } : null,
+    product: reviewData.productId ? {
+      _id: reviewData.productId._id,
+      name: reviewData.productId.name || 'Unknown Product',
+      thumbnail: reviewData.productId.thumbnail,
+      price: reviewData.productId.price || 0,
+    } : null,
+    rating: reviewData.rating,
+    comment: reviewData.comment,
+    isApproved: reviewData.isApproved,
+    isRejected: reviewData.isRejected,
+    rejectionReason: reviewData.rejectionReason,
+    approvedBy: reviewData.approvedBy ? {
+      _id: reviewData.approvedBy._id,
+      name: reviewData.approvedBy.name || 'Unknown Admin',
+      username: reviewData.approvedBy.username || 'unknown',
+    } : null,
+    approvedAt: reviewData.approvedAt,
+    createdAt: reviewData.createdAt,
+    updatedAt: reviewData.updatedAt,
+  };
+}
+
   // Admin: Approve a review
   async approveReview(reviewId: string, adminId: string): Promise<Review> {
     const review = await this.reviewModel.findById(reviewId);

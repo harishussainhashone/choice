@@ -154,4 +154,94 @@ export class EmailService {
       totalPages: Math.ceil(total / limit),
     };
   }
+
+  async sendEmailToAllCustomers(
+    adminId: string,
+    subject: string,
+    message: string
+  ): Promise<{
+    success: boolean;
+    totalSent: number;
+    totalFailed: number;
+    failedEmails: string[];
+    message: string;
+  }> {
+    // Get all customers (users with role: 'user')
+    const customers = await this.userModel.find({ 
+      role: 'user' 
+    }).select('email name username').exec();
+  
+    if (customers.length === 0) {
+      throw new NotFoundException('No customers found in the system');
+    }
+  
+    let totalSent = 0;
+    let totalFailed = 0;
+    const failedEmails: string[] = [];
+  
+    // Send email to each customer
+    for (const customer of customers) {
+      try {
+        // Create email log entry
+        const emailLog = new this.emailLogModel({
+          sentBy: adminId,
+          sentTo: customer.email,
+          subject,
+          message,
+          status: 'pending',
+        });
+        await emailLog.save();
+  
+        // Prepare email content
+        const mailOptions = {
+          from: `"${process.env.EMAIL_FROM_NAME || 'Choice Delivery'}" <${process.env.SMTP_USER}>`,
+          to: customer.email,
+          subject: subject,
+          text: message,
+          html: this.generateHtmlEmail(customer.name || customer.username, message),
+        };
+  
+        // Send email
+        const info = await this.transporter.sendMail(mailOptions);
+  
+        // Update log with success
+        emailLog.status = 'success';
+        emailLog.messageId = info.messageId;
+        await emailLog.save();
+  
+        totalSent++;
+        console.log(`Email sent to ${customer.email}`);
+  
+        // Add delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100)); // 100ms delay between emails
+  
+      } catch (error) {
+        // Log failure
+        const emailLog = await this.emailLogModel.findOne({
+          sentBy: adminId,
+          sentTo: customer.email,
+          subject,
+          status: 'pending'
+        }).sort({ createdAt: -1 });
+  
+        if (emailLog) {
+          emailLog.status = 'failed';
+          emailLog.errorMessage = error.message;
+          await emailLog.save();
+        }
+  
+        totalFailed++;
+        failedEmails.push(customer.email);
+        console.error(`Failed to send email to ${customer.email}:`, error.message);
+      }
+    }
+  
+    return {
+      success: totalSent > 0,
+      totalSent,
+      totalFailed,
+      failedEmails,
+      message: `Email sent to ${totalSent} customers. Failed: ${totalFailed}`,
+    };
+  }
 }
