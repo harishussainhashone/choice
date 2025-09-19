@@ -6,12 +6,15 @@ import { Review, ReviewDocument } from './schemas/review.schema';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { QueryProductDto } from './dto/query-product.dto';
+import { UpdateSelectedProductsPriceDto } from './dto/update-selected-products-price.dto';
+import { CategoriesService } from '../categories/categories.service';
 
 @Injectable()
 export class ProductsService {
   constructor(
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
     @InjectModel(Review.name) private reviewModel: Model<ReviewDocument>,
+    private categoriesService: CategoriesService,
   ) {}
 
   async create(createProductDto: CreateProductDto): Promise<Product> {
@@ -138,6 +141,79 @@ export class ProductsService {
     }
 
     return result;
+  }
+
+  async getProductForAdmin(id: string): Promise<{
+    product: Product;
+    analytics: {
+      totalViews: number;
+      totalSales: number;
+      totalRevenue: number;
+      averageRating: number;
+      totalReviews: number;
+      stockStatus: string;
+    };
+    recentReviews: any[];
+  }> {
+    const product = await this.productModel.findById(id).exec();
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${id} not found`);
+    }
+
+    const analytics = await this.getProductAnalytics(id);
+
+    const recentReviews = await this.reviewModel
+      .find({ productId: id })
+      .populate('userId', 'name username email')
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .lean()
+      .exec();
+
+    // Format reviews for admin view
+    const formattedReviews = recentReviews.map((review: any) => ({
+      _id: review._id,
+      user: {
+        _id: review.userId._id,
+        name: review.userId.name,
+        username: review.userId.username,
+        email: review.userId.email,
+      },
+      rating: review.rating,
+      comment: review.comment,
+      isApproved: review.isApproved,
+      createdAt: review.createdAt,
+    }));
+
+    return {
+      product,
+      analytics,
+      recentReviews: formattedReviews,
+    };
+  }
+
+  private async getProductAnalytics(productId: string): Promise<{
+    totalViews: number;
+    totalSales: number;
+    totalRevenue: number;
+    averageRating: number;
+    totalReviews: number;
+    stockStatus: string;
+  }> {
+    const reviewStats = await this.getProductReviewStats(productId);
+    
+    const product = await this.productModel.findById(productId).lean().exec();
+    
+    const stockStatus = product?.isActive ? 'In Stock' : 'Out of Stock';
+
+    return {
+      totalViews: 0,
+      totalSales: 0,
+      totalRevenue: 0, 
+      averageRating: reviewStats.averageRating || 0,
+      totalReviews: reviewStats.totalReviews || 0,
+      stockStatus,
+    };
   }
 
   async findByCategory(categoryId: string, queryDto: QueryProductDto): Promise<{ products: Product[]; total: number; page: number; totalPages: number }> {
@@ -423,6 +499,101 @@ export class ProductsService {
     } catch (error) {
       console.error('Error cloning products:', error);
       throw error;
+    }
+  }
+
+
+  // Helper method to round prices to 2 decimal places
+  private roundToTwoDecimals(value: number): number {
+    return Math.round(value * 100) / 100;
+  }
+
+
+  // Update selected products price method
+  async updateSelectedProductsPrice(updateSelectedProductsPriceDto: UpdateSelectedProductsPriceDto): Promise<{
+    message: string;
+    totalUpdated: number;
+    updatedProducts: any[];
+    summary: any;
+  }> {
+    const { productIds, newPrice } = updateSelectedProductsPriceDto;
+
+    // Validate that all products exist and are active
+    const products = await this.productModel.find({
+      _id: { $in: productIds },
+      isActive: true,
+    }).exec();
+
+    if (products.length === 0) {
+      throw new NotFoundException('No active products found with the provided IDs');
+    }
+
+    if (products.length !== productIds.length) {
+      const foundIds = products.map(p => (p._id as any).toString());
+      const missingIds = productIds.filter(id => !foundIds.includes(id));
+      throw new NotFoundException(`Products not found or inactive: ${missingIds.join(', ')}`);
+    }
+
+    // Prepare bulk update operations
+    const bulkOperations: any[] = [];
+    const updatedProductDetails: any[] = [];
+    let totalOldPrice = 0;
+
+    for (const product of products) {
+      const oldPrice = product.price;
+
+      // Add to bulk operations
+      bulkOperations.push({
+        updateOne: {
+          filter: { _id: product._id },
+          update: { 
+            $set: { 
+              price: this.roundToTwoDecimals(newPrice),
+              updatedAt: new Date(),
+            }
+          }
+        }
+      });
+
+      // Track details for response
+      updatedProductDetails.push({
+        _id: product._id,
+        name: product.name,
+        oldPrice,
+        newPrice: this.roundToTwoDecimals(newPrice),
+        priceChange: this.roundToTwoDecimals(newPrice - oldPrice),
+        percentageChange: this.roundToTwoDecimals(((newPrice - oldPrice) / oldPrice) * 100)
+      });
+
+      totalOldPrice += oldPrice;
+    }
+
+    // Execute bulk update
+    try {
+      const result = await this.productModel.bulkWrite(bulkOperations);
+
+      // Log the price update for audit purposes
+      console.log(`Selected products price update executed: Products ${productIds.join(', ')}, New Price: ${newPrice}, Products Updated: ${result.modifiedCount}`);
+
+      // Prepare summary statistics
+      const summary = {
+        totalProducts: products.length,
+        newPrice: this.roundToTwoDecimals(newPrice),
+        averageOldPrice: this.roundToTwoDecimals(totalOldPrice / products.length),
+        totalPriceChange: this.roundToTwoDecimals((newPrice * products.length) - totalOldPrice),
+        averagePriceChange: this.roundToTwoDecimals(((newPrice * products.length) - totalOldPrice) / products.length),
+        timestamp: new Date(),
+      };
+
+      return {
+        message: `Successfully updated prices for ${result.modifiedCount} selected products to $${newPrice}`,
+        totalUpdated: result.modifiedCount,
+        updatedProducts: updatedProductDetails,
+        summary,
+      };
+    } catch (error) {
+      console.error('Selected products price update failed:', error);
+      throw new BadRequestException('Failed to update selected product prices. Please try again.');
     }
   }
 }

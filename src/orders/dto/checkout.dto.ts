@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsEmail, IsOptional, IsNumber, Min } from 'class-validator';
+import { Type } from 'class-transformer';
+import { 
+  IsString, 
+  IsNotEmpty, 
+  IsEmail, 
+  IsOptional, 
+  ValidateNested,
+  IsObject 
+} from 'class-validator';
 
 export class ShippingAddressDto {
   @ApiProperty({
@@ -23,6 +31,7 @@ export class ShippingAddressDto {
     example: 'john.doe@example.com',
   })
   @IsEmail()
+  @IsNotEmpty()
   email: string;
 
   @ApiProperty({
@@ -79,6 +88,10 @@ export class CheckoutDto {
     description: 'Shipping address',
     type: ShippingAddressDto,
   })
+  @ValidateNested()
+  @Type(() => ShippingAddressDto)
+  @IsObject()
+  @IsNotEmpty()
   shippingAddress: ShippingAddressDto;
 
   @ApiProperty({

@@ -8,6 +8,7 @@ import { ReviewsController } from './reviews.controller';
 import { ReviewsService } from './reviews.service';
 import { AdminGuard } from '../auth/guards/admin.guard';
 import { JwtModule } from '@nestjs/jwt';
+import { CategoriesModule } from '../categories/categories.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { JwtModule } from '@nestjs/jwt';
       secret: 'your-secret-key', // In production, use environment variable
       signOptions: { expiresIn: '24h' },
     }),
+    CategoriesModule,
   ],
   controllers: [ProductsController, ReviewsController],
   providers: [ProductsService, ReviewsService, AdminGuard],
