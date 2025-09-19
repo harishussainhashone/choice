@@ -145,6 +145,10 @@ export class PaymentsService {
   async confirmStripePayment(confirmPaymentDto: ConfirmPaymentDto): Promise<any> {
     const { paymentIntentId } = confirmPaymentDto;
 
+  if (!paymentIntentId) {
+    throw new BadRequestException('Payment Intent ID is required for Stripe payments');
+  }
+
     try {
       // Retrieve payment intent from Stripe
       const paymentIntent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
@@ -184,6 +188,11 @@ export class PaymentsService {
   // Confirm PayPal Payment
   async confirmPayPalPayment(confirmPaymentDto: ConfirmPaymentDto): Promise<any> {
     const { paypalOrderId } = confirmPaymentDto;
+
+    if (!paypalOrderId) {
+      throw new BadRequestException('PayPal Order ID is required for PayPal payments');
+    }
+  
 
     try {
       // Find payment record
